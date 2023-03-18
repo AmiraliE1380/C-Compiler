@@ -111,6 +111,11 @@ def write_files():
     pass
 
 
+def error(line_num, string, type):
+    global errors
+    errors.append(f'{line_num}.\t({string}, {type})')
+
+
 def delete_comments(input_prog):
     comment = False
     comment_beg = None
@@ -119,21 +124,23 @@ def delete_comments(input_prog):
         if not comment and input_prog[i] == '/' and i + 1 < len(input_prog) and input_prog[i + 1] == '*':
             comment = True
             comment_beg = i
+            input_prog[i], input_prog[i + 1] = -1, -1
+            comment_count += 2
         elif comment and input_prog[i] == '*' and i + 1 < len(input_prog) and input_prog[i + 1] == '/':
             comment = False
-            for j in range(comment_beg, i + 2):
+            for j in range(comment_beg + 2, i + 2):
                 input_prog[j] = -1  # deleting the comments
                 comment_count += 1
         elif not comment and input_prog[i] == '*' and i + 1 < len(input_prog) and input_prog[i] == '/':
-            pass
-            # TODO:Unmatched comment
+            input_prog[i], input_prog[i + 1] = -1, -1
+            comment_count += 2
+            # TODO: Unmatched comment
+
+    if comment:
+        error()
 
     for _ in range(comment_count):
         input_prog.remove(-1)
-
-    if comment:
-        pass
-        # TODO:unclosed comment
 
 
 def test(chars):
