@@ -8,6 +8,10 @@ def clear(num, line):
         line.pop()
 
 
+def invalid_number_error(number, line):
+    pass
+
+
 def is_NUM(line):
     if not '0' <= line[0] <= '9':
         return False
@@ -17,6 +21,9 @@ def is_NUM(line):
         if '0' <= char <= '9':
             number += char
         else:
+            if 'a' <= char <= 'z' or 'A' <= char <= 'Z':
+                invalid_number_error(number, line)
+                return True
             tokens[len(tokens) - 1].append(f'(NUM, {number}) ')
             clear(len(number), line)
             return True
@@ -66,6 +73,7 @@ def is_SYMBOL(line):
     if token is None:
         return False
     tokens[len(tokens) - 1].append(f'(SYMBOL, {token})')
+    clear(clear_num, line)
 
 
 
@@ -82,7 +90,7 @@ def is_WHITESPACE(line):
     return True
 
 
-def raise_error(chars):
+def raise_error(line):
     pass
 
 
@@ -159,4 +167,6 @@ def scanner_run(input_prog):
         while len(line) > 0:
             get_next_token(line)
 
+
     write_files()
+    print(tokens)
