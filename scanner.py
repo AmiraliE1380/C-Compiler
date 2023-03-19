@@ -5,11 +5,7 @@ lexemes = []
 
 def clear(num, line):
     for _ in range(num):
-        line.pop()
-
-
-def invalid_number_error(number, line):
-    pass
+        line.pop(0)
 
 
 def is_NUM(line):
@@ -22,7 +18,7 @@ def is_NUM(line):
             number += char
         else:
             if 'a' <= char <= 'z' or 'A' <= char <= 'Z':
-                invalid_number_error(number, line)
+                error()
                 return True
             tokens[len(tokens) - 1].append(f'(NUM, {number}) ')
             clear(len(number), line)
@@ -63,18 +59,17 @@ def is_ID_KEYWORD(line):
 def is_SYMBOL(line):
     c = line[0]
     token = None
-    if (c == ';' or c == ':' or c == ',' or c == '[' or c == ']' or c == '(' or c == ')'
-            or c == '{' or c == '}' or c == '+' or c == '-' or c == '*' or c == '<'):
-        token = c
-        clear_num = 1
     if line[0] == '=' and line[1] == '=':
         token = line[0] + line[1]
         clear_num = 2
+    if (c == ';' or c == ':' or c == ',' or c == '[' or c == ']' or c == '(' or c == ')' or c == '='
+            or c == '{' or c == '}' or c == '+' or c == '-' or c == '*' or c == '<'):
+        token = c
+        clear_num = 1
     if token is None:
         return False
     tokens[len(tokens) - 1].append(f'(SYMBOL, {token})')
     clear(clear_num, line)
-
 
 
 def is_WHITESPACE(line):
@@ -90,21 +85,21 @@ def is_WHITESPACE(line):
     return True
 
 
-def raise_error(line):
-    pass
-
-
 def get_next_token(line):
     if is_WHITESPACE(line):
         return
     if is_NUM(line):
         return
     if is_ID_KEYWORD(line):
+        print(f'tokens2={tokens}')
+        print(f'line={line}')
         return
     if is_SYMBOL(line):
         return
 
-    raise_error(line)
+    global tokens
+    error(len(tokens), line[0], 'Invalid input')
+    clear(1, line)
 
 
 def write_files():
@@ -113,31 +108,36 @@ def write_files():
 
 def error(line_num, string, type):
     global errors
-    errors.append(f'{line_num}.\t({string}, {type})')
+    errors.append((line_num, string, type))
 
 
 def delete_comments(input_prog):
     comment = False
     comment_beg = None
     comment_count = 0
+    line_num = 1
     for i in range(len(input_prog)):
         if not comment and input_prog[i] == '/' and i + 1 < len(input_prog) and input_prog[i + 1] == '*':
             comment = True
             comment_beg = i
-            input_prog[i], input_prog[i + 1] = -1, -1
-            comment_count += 2
         elif comment and input_prog[i] == '*' and i + 1 < len(input_prog) and input_prog[i + 1] == '/':
             comment = False
-            for j in range(comment_beg + 2, i + 2):
+            for j in range(comment_beg, i + 2):
                 input_prog[j] = -1  # deleting the comments
                 comment_count += 1
-        elif not comment and input_prog[i] == '*' and i + 1 < len(input_prog) and input_prog[i] == '/':
+        elif not comment and input_prog[i] == '*' and i + 1 < len(input_prog) and input_prog[i + 1] == '/':
             input_prog[i], input_prog[i + 1] = -1, -1
             comment_count += 2
-            # TODO: Unmatched comment
+            error(line_num, '*/', 'Unmatched comment')
+        elif not comment and input_prog[i] == '\n':
+            line_num += 1
 
     if comment:
-        error()
+        # maybe a bug is risen because of '/* comm...'
+        error(line_num, '/* comm...', 'Unclosed comment')
+        for j in range(comment_beg, len(input_prog)):
+            input_prog[j] = -1  # deleting the comments
+            comment_count += 1
 
     for _ in range(comment_count):
         input_prog.remove(-1)
@@ -169,10 +169,15 @@ def get_lines(input_prog):
 def scanner_run(input_prog):
     lines = get_lines(list(input_prog))
     print(lines)
+
+    global tokens
     for line in lines:
         tokens.append([])
+        print(f'tokens={tokens}')
+        print(f'line before:\n{test(line)}\n')
         while len(line) > 0:
             get_next_token(line)
+        print(f'line before:\n{tokens[len(tokens) - 1]}\n')
 
 
     write_files()
