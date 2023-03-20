@@ -1,5 +1,6 @@
 tokens = []
 errors = []
+keywords = []
 lexemes = []
 
 
@@ -18,7 +19,12 @@ def is_NUM(line):
             number += char
         else:
             if 'a' <= char <= 'z' or 'A' <= char <= 'Z':
-                error()
+                clear(len(number), line)
+                while 'a' <= char <= 'z' or 'A' <= char <= 'Z':
+                    number += char
+                    line.pop(0)
+                    char = line[0]
+                error(len(tokens), number, 'Invalid number')  # TODO:
                 return True
             tokens[len(tokens) - 1].append(f'(NUM, {number}) ')
             clear(len(number), line)
@@ -35,24 +41,13 @@ def is_ID_KEYWORD(line):
             id += char
         else:
             token = f'(ID, {id}) '
-            if id == 'if':
-                token = '(KEYWORD, if) '
-            if id == 'else':
-                token = '(KEYWORD, else) '
-            if id == 'void':
-                token = '(KEYWORD, void) '
-            if id == 'int':
-                token = '(KEYWORD, int) '
-            if id == 'repeat':
-                token = '(KEYWORD, void) '
-            if id == 'break':
-                token = '(KEYWORD, break) '
-            if id == 'until':
-                token = '(KEYWORD, until) '
-            if id == 'return':
-                token = '(KEYWORD, return) '
+            if (id == 'if' or id == 'else' or id == 'void' or id == 'int' or id == 'repeat' or
+                    id == 'break' or id == 'until' or id == 'return'):
+                token = f'(KEYWORD, {id}) '
             tokens[len(tokens) - 1].append(token)
             clear(len(id), line)
+            if id not in lexemes:
+                lexemes.append(id)
             return True
 
 
@@ -70,6 +65,7 @@ def is_SYMBOL(line):
         return False
     tokens[len(tokens) - 1].append(f'(SYMBOL, {token})')
     clear(clear_num, line)
+    return True
 
 
 def is_WHITESPACE(line):
@@ -91,8 +87,6 @@ def get_next_token(line):
     if is_NUM(line):
         return
     if is_ID_KEYWORD(line):
-        print(f'tokens2={tokens}')
-        print(f'line={line}')
         return
     if is_SYMBOL(line):
         return
@@ -102,8 +96,52 @@ def get_next_token(line):
     clear(1, line)
 
 
+def write_errors():
+    num_lines = len(tokens)
+    output = ''
+    for num_line in range(num_lines):
+        line_has_errors = False
+        for error in errors:
+            if error[0] == num_line + 1:
+                if not line_has_errors:
+                    output += f'{num_line + 1}.\t'
+                    line_has_errors = True
+                output += f'({error[1]}, {error[2]}) '
+        if line_has_errors:
+            output += '\n'
+
+    return output
+
+
+def write_tokens():
+    output = ''
+    count = 0
+    for line in tokens:
+        count += 1
+        if not line:
+            continue
+        output += f'{count}.\t'
+        for token in line:
+            output += f'{token} '
+        output += '\n'
+
+    return output
+
+
+def write_symbols():
+    output = f'1.\t{lexemes[0]}'
+    for i in range(1, len(lexemes)):
+        output += f'\n{i + 1}\t{lexemes[i]}'
+    return output
+
+
 def write_files():
-    pass
+    errors_file = open("lexical_errors.txt", "w")
+    errors_file.write(write_errors())
+    tokens_file = open("tokens.txt", "w")
+    tokens_file.write(write_tokens())
+    symbol_file = open("symbol_table.txt", "w")
+    symbol_file.write(write_symbols())
 
 
 def error(line_num, string, type):
@@ -152,8 +190,7 @@ def test(chars):
 
 def get_lines(input_prog):
     delete_comments(input_prog)
-    test(input_prog)
-    print(input_prog)
+    # test(input_prog)
     lines = []
     line = []
     for char in input_prog:
@@ -168,17 +205,11 @@ def get_lines(input_prog):
 
 def scanner_run(input_prog):
     lines = get_lines(list(input_prog))
-    print(lines)
 
     global tokens
     for line in lines:
         tokens.append([])
-        print(f'tokens={tokens}')
-        print(f'line before:\n{test(line)}\n')
         while len(line) > 0:
             get_next_token(line)
-        print(f'line before:\n{tokens[len(tokens) - 1]}\n')
-
 
     write_files()
-    print(tokens)
