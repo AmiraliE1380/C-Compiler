@@ -7,7 +7,7 @@ all_symbols = [';', ':', ',', '[', ']', '(', ')', '=', '{', '}', '+', '-', '*', 
 white_spaces = [' ', '\r', '\t', '\v', '\f']
 
 
-def valid_chars_pre(char):
+def is_valid_chars(char):
     if ('0' <= char <= '9' or 'a' <= char <= 'z' or 'A' <= char <= 'Z' or
             char in all_symbols or char in white_spaces):
         return True
@@ -29,27 +29,14 @@ def is_NUM(line):
             number += char
         else:
             if 'a' <= char <= 'z' or 'A' <= char <= 'Z':
+                number += char
                 clear(len(number), line)
-                while 'a' <= char <= 'z' or 'A' <= char <= 'Z':
-                    number += char
-                    line.pop(0)
-                    char = line[0]
-                error(len(tokens), number, 'Invalid number')  # TODO:
+                error(len(tokens), number, 'Invalid number')
                 return True
-            tokens[len(tokens) - 1].append(f'(NUM, {number})')
-            clear(len(number), line)
-            return True
-
-
-def invalid_input(prev_str, line):
-    line.pop(0)
-    char = line[0]
-    clear(len(prev_str), line)
-    while not valid_chars_pre(char):
-        prev_str += char
-        line.pop(0)
-        char = line[0]
-    error(len(tokens), prev_str, 'Invalid input')
+            break
+    tokens[len(tokens) - 1].append(f'(NUM, {number})')
+    clear(len(number), line)
+    return True
 
 
 def is_ID_KEYWORD(line):
@@ -61,19 +48,22 @@ def is_ID_KEYWORD(line):
         if '0' <= char <= '9' or 'a' <= char <= 'z' or 'A' <= char <= 'Z':
             id += char
         else:
-            if not valid_chars_pre(char):
-                invalid_input(id + char, line)
+            if not is_valid_chars(char):
+                id += char
+                error(len(tokens), id, 'Invalid input')
+                clear(len(id), line)
                 return True
+            break
 
-            token = f'(ID, {id})'
-            if (id == 'if' or id == 'else' or id == 'void' or id == 'int' or id == 'repeat' or
-                    id == 'break' or id == 'until' or id == 'return'):
-                token = f'(KEYWORD, {id})'
-            elif id not in lexemes:
-                lexemes.append(id)
-            tokens[len(tokens) - 1].append(token)
-            clear(len(id), line)
-            return True
+    token = f'(ID, {id})'
+    if (id == 'if' or id == 'else' or id == 'void' or id == 'int' or id == 'repeat' or
+            id == 'break' or id == 'until' or id == 'return'):
+        token = f'(KEYWORD, {id})'
+    elif id not in lexemes:
+        lexemes.append(id)
+    tokens[len(tokens) - 1].append(token)
+    clear(len(id), line)
+    return True
 
 
 def is_SYMBOL(line):
@@ -86,6 +76,11 @@ def is_SYMBOL(line):
         clear_num = 1
     else:
         return False
+    if c != ';' and len(line) > 1 and not is_valid_chars(line[1]):
+        error(len(tokens), line[0] + line[1], 'Invalid input')
+        line.pop(0)
+        line.pop(0)
+        return True
     tokens[len(tokens) - 1].append(f'(SYMBOL, {token})')
     clear(clear_num, line)
     return True
@@ -114,10 +109,13 @@ def get_next_token(line):
     if is_SYMBOL(line):
         return
 
-    invalid_input(line[0], line)
+    error(len(tokens), line[0], 'Invalid input')
+    line.pop(0)
 
 
 def write_errors():
+    if not errors:
+        return 'There is no lexical error.'
     num_lines = len(tokens)
     output = ''
     for num_line in range(num_lines):
@@ -159,7 +157,7 @@ def write_symbols():
 7.	until
 8.	void'''
     for i in range(len(lexemes)):
-        output += f'\n{i + 9}\t{lexemes[i]}'
+        output += f'\n{i + 9}.\t{lexemes[i]}'
     return output
 
 
