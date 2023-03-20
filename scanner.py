@@ -76,7 +76,7 @@ def is_SYMBOL(line):
         clear_num = 1
     else:
         return False
-    if c != ';' and len(line) > 1 and not is_valid_chars(line[1]):
+    if c not in [';', '[', ']'] and len(line) > 1 and line[1] != '/' and not is_valid_chars(line[1]):
         error(len(tokens), line[0] + line[1], 'Invalid input')
         line.pop(0)
         line.pop(0)
@@ -109,6 +109,11 @@ def get_next_token(line):
     if is_SYMBOL(line):
         return
 
+    if len(line) >= 2 and line[0] == '/' and line[1] != '/' and not is_valid_chars(line[1]):
+        error(len(tokens), line[0] + line[1], 'Invalid input')
+        line.pop(0)
+        line.pop(0)
+        return
     error(len(tokens), line[0], 'Invalid input')
     line.pop(0)
 
