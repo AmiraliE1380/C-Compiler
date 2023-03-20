@@ -3,6 +3,16 @@ errors = []
 keywords = []
 lexemes = []
 
+all_symbols = [';', ':', ',', '[', ']', '(', ')', '=', '{', '}', '+', '-', '*', '<']
+white_spaces = [' ', '\r', '\t', '\v', '\f']
+
+
+def valid_chars_pre(char):
+    if ('0' <= char <= '9' or 'a' <= char <= 'z' or 'A' <= char <= 'Z' or
+            char in all_symbols or char in white_spaces):
+        return True
+    return False
+
 
 def clear(num, line):
     for _ in range(num):
@@ -26,9 +36,20 @@ def is_NUM(line):
                     char = line[0]
                 error(len(tokens), number, 'Invalid number')  # TODO:
                 return True
-            tokens[len(tokens) - 1].append(f'(NUM, {number}) ')
+            tokens[len(tokens) - 1].append(f'(NUM, {number})')
             clear(len(number), line)
             return True
+
+
+def invalid_input(prev_str, line):
+    line.pop(0)
+    char = line[0]
+    clear(len(prev_str), line)
+    while not valid_chars_pre(char):
+        prev_str += char
+        line.pop(0)
+        char = line[0]
+    error(len(tokens), prev_str, 'Invalid input')
 
 
 def is_ID_KEYWORD(line):
@@ -40,28 +61,30 @@ def is_ID_KEYWORD(line):
         if '0' <= char <= '9' or 'a' <= char <= 'z' or 'A' <= char <= 'Z':
             id += char
         else:
-            token = f'(ID, {id}) '
+            if not valid_chars_pre(char):
+                invalid_input(id + char, line)
+                return True
+
+            token = f'(ID, {id})'
             if (id == 'if' or id == 'else' or id == 'void' or id == 'int' or id == 'repeat' or
                     id == 'break' or id == 'until' or id == 'return'):
-                token = f'(KEYWORD, {id}) '
+                token = f'(KEYWORD, {id})'
+            elif id not in lexemes:
+                lexemes.append(id)
             tokens[len(tokens) - 1].append(token)
             clear(len(id), line)
-            if id not in lexemes:
-                lexemes.append(id)
             return True
 
 
 def is_SYMBOL(line):
     c = line[0]
-    token = None
     if line[0] == '=' and line[1] == '=':
         token = line[0] + line[1]
         clear_num = 2
-    if (c == ';' or c == ':' or c == ',' or c == '[' or c == ']' or c == '(' or c == ')' or c == '='
-            or c == '{' or c == '}' or c == '+' or c == '-' or c == '*' or c == '<'):
+    elif c in all_symbols:
         token = c
         clear_num = 1
-    if token is None:
+    else:
         return False
     tokens[len(tokens) - 1].append(f'(SYMBOL, {token})')
     clear(clear_num, line)
@@ -71,7 +94,7 @@ def is_SYMBOL(line):
 def is_WHITESPACE(line):
     clear_count = 0
     for char in line:
-        if char == ' ' or char == '\r' or char == '\t' or char == '\v' or char == '\f':
+        if char in white_spaces:
             clear_count += 1
         else:
             if clear_count == 0:
@@ -91,9 +114,7 @@ def get_next_token(line):
     if is_SYMBOL(line):
         return
 
-    global tokens
-    error(len(tokens), line[0], 'Invalid input')
-    clear(1, line)
+    invalid_input(line[0], line)
 
 
 def write_errors():
@@ -129,9 +150,16 @@ def write_tokens():
 
 
 def write_symbols():
-    output = f'1.\t{lexemes[0]}'
-    for i in range(1, len(lexemes)):
-        output += f'\n{i + 1}\t{lexemes[i]}'
+    output = f'''1.	break
+2.	else
+3.	if
+4.	int
+5.	repeat
+6.	return
+7.	until
+8.	void'''
+    for i in range(len(lexemes)):
+        output += f'\n{i + 9}\t{lexemes[i]}'
     return output
 
 
