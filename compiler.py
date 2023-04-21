@@ -3,8 +3,9 @@ Amirali Ebrahimzadeh - 98105546
 Emad Zinoghli - 98103267
 """
 
-import scanner
+import parser
 
+address = "input.txt"
 
-input_prog = open('input.txt', 'r').read()
-scanner.scanner_run(input_prog)
+input_prog = open(address, 'r').read()
+parser.parser_driver(input_prog)

@@ -244,3 +244,30 @@ def scanner_run(input_prog):
             get_next_token(line)
 
     write_files()
+
+# turn a token of (Type, Value) to a code-friendly tupe Type,Value
+def untokenify(token):
+    untoken = token[1:-1].split(', ')
+    return untoken[0],untoken[1]
+
+lines = []
+lines_index = 0
+def scanner(input_prog):
+    global lines
+    global lines_index
+    lines = get_lines(list(input_prog))
+    lines_index= 0
+    def get_next_token_parse():
+        global lines 
+        global lines_index 
+        tokens.append([])
+        while len(tokens[-1]) == 0 and lines_index < len(lines):
+            if len(lines[lines_index]) > 0:
+                get_next_token(lines[lines_index])
+            else:
+                lines_index+= 1
+        if len(tokens[-1]) != 0:
+            tok1,tok2 = untokenify(tokens[-1][0])
+            return tok1,tok2,lines_index+1
+        return 'EOF', '$',lines_index
+    return get_next_token_parse
