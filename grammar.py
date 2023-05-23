@@ -1,4 +1,4 @@
-from token import is_nonterminal
+from token import is_nonterminal,is_action
 
 
 class Grammar:
@@ -8,10 +8,10 @@ class Grammar:
             'Program': [['Declaration-list','$']],
             'Declaration-list': [['Declaration', 'Declaration-list'], ['epsilon']],
             'Declaration': [['Declaration-initial', 'Declaration-prime']],
-            'Declaration-initial': [['Type-specifier','id']],
+            'Declaration-initial': [['Type-specifier', '#decl-id' ,'id']],
             'Declaration-prime': [['Fun-declaration-prime'], ['Var-declaration-prime']],
-            'Var-declaration-prime': [[';'], ['[', 'num', ']', ';']],
-            'Fun-declaration-prime': [['(', 'Params', ')', 'Compound-stmt']],
+            'Var-declaration-prime': [['#decl-var',';'], ['[','#decl-arr', 'num', ']', ';']],
+            'Fun-declaration-prime': [['#decl-func','(', 'Params', ')', 'Compound-stmt']],
             'Type-specifier': [['int'], ['void']],
             'Params': [['int', 'id', 'Param-prime', 'Param-list'], ['void']],
             'Param-list': [[',', 'Param', 'Param-list'], ['epsilon']],
@@ -20,13 +20,13 @@ class Grammar:
             'Compound-stmt': [['{', 'Declaration-list', 'Statement-list', '}']],
             'Statement-list': [['Statement', 'Statement-list'], ['epsilon']],
             'Statement': [['Expression-stmt'], ['Compound-stmt'], ['Selection-stmt'], ['Iteration-stmt'], ['Return-stmt']],
-            'Expression-stmt': [['Expression', ';'], ['break', ';'], ';'],
+            'Expression-stmt': [['Expression', '#expr-stm-end' ,';'], ['break', ';'], ';'],
             'Selection-stmt': [['if', '(', 'Expression', ')', 'Statement', 'else', 'Statement']],
             'Iteration-stmt': [['repeat', 'Statement', 'until', '(', 'Expression',')']],
             'Return-stmt': [['return', 'Return-stmt-prime']],
             'Return-stmt-prime': [[';'], ['Expression', ';']],
-            'Expression': [['Simple-expression-zegond'], ['id', 'B']],
-            'B': [['=','Expression'], ['[', 'Expression', ']', 'H'], ['Simple-expression-prime']],
+            'Expression': [['Simple-expression-zegond'], ['#expr-id', 'id', 'B']],
+            'B': [['=','Expression', '#B-assign'], ['[', 'Expression', ']', 'H'], ['Simple-expression-prime']],
             'H': [['=', 'Expression'], ['G', 'D','C']],
             'Simple-expression-zegond':[['Additive-expression-zegond', 'C']],
             'Simple-expression-prime':[['Additive-expression-prime','C']],
@@ -35,27 +35,32 @@ class Grammar:
             'Additive-expression': [['Term', 'D']],
             'Additive-expression-prime': [['Term-prime', 'D']],
             'Additive-expression-zegond': [['Term-zegond', 'D']],
-            'D': [['Addop','Term', 'D'], ['epsilon']],
+            'D': [['#D-addop','Addop','Term','#D-add' ,'D'], ['epsilon']],
             'Addop': [['+'], ['-']],
             'Term': [['Factor', 'G']],
             'Term-prime': [['Factor-prime', 'G']],
             'Term-zegond': [['Factor-zegond', 'G']],
-            'G': [['*', 'Factor', 'G'], ['epsilon']],
-            'Factor': [['(', 'Expression', ')'], ['id', 'Var-call-prime'], ['num']],
+            'G': [['*', 'Factor','#G-mult', 'G'], ['epsilon']],
+            'Factor': [['(', 'Expression', ')'], ['#factor-id','id', 'Var-call-prime'], ['#factor-num','num']],
             'Var-call-prime': [['(', 'Args', ')'], ['Var-prime']],
-            'Var-prime': [['[', 'Expression', ']'], ['epsilon']],
-            'Factor-prime':[['(', 'Args', ')'], ['epsilon']],
-            'Factor-zegond':[['(', 'Expression', ')'], ['num']],
+            'Var-prime': [['[', 'Expression', '#var-prime-ind' ,']'], ['epsilon']],
+            'Factor-prime':[['(', '#factor-prime-arg-begin', 'Args', '#factor-prime-arg-end' ,')'], ['epsilon']],
+            'Factor-zegond':[['(', 'Expression', ')'], ['#factor-zeg-num','num']],
             'Args': [['Arg-list'], ['epsilon']],
             'Arg-list':[['Expression', 'Arg-list-prime']],
             'Arg-list-prime':[[',', 'Expression', 'Arg-list-prime'], ['epsilon']]
         }
         self.terminals = ['id', 'num', ';', '[', ']', '(', ')', '{' , '}', 'void', 'int', 'if','else','break','repeat','until','return', '<', '==', '=','+','-','*',',','$']
+        self.actions = ['#decl-id','#decl-var','#decl-arr','#decl-func',
+        '#expr-stm-end','#expr-id','#B-assign','#D-addop','#D-add','#G-mult','#factor-id', '#factor-num','#var-prime-ind','#factor-zeg-num','#factor-prime-arg','#factor-prime-arg-begin',
+        ]
         self.first_sets = {}
         self.follow_sets = {"Program": {'$'}}
 
     # calculates the first set of variable
     def first_set(self,variable):
+        if is_action(variable):
+            return {}
         if not is_nonterminal(variable):
             return {variable}
         if variable in self.first_sets:
@@ -73,6 +78,8 @@ class Grammar:
         if len(product) == 0:
             return {'epsilon'}
         for term in product:
+            if is_action(term):
+                continue
             term_first = self.first_set(term)
             first = first | term_first
             if 'epsilon' not in term_first:
@@ -81,6 +88,8 @@ class Grammar:
 
     # returns the follow set of the variable
     def follow_set(self,variable):
+        if is_action(variable):
+            return {}
         if not is_nonterminal(variable):
             return 
         if variable not in self.grammar:
