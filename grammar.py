@@ -20,17 +20,17 @@ class Grammar:
             'Compound-stmt': [['{', 'Declaration-list', 'Statement-list', '}']],
             'Statement-list': [['Statement', 'Statement-list'], ['epsilon']],
             'Statement': [['Expression-stmt'], ['Compound-stmt'], ['Selection-stmt'], ['Iteration-stmt'], ['Return-stmt']],
-            'Expression-stmt': [['Expression', '#expr-stm-end' ,';'], ['break', ';'], ';'],
-            'Selection-stmt': [['if', '(', 'Expression', ')', 'Statement', 'else', 'Statement']],
-            'Iteration-stmt': [['repeat', 'Statement', 'until', '(', 'Expression',')']],
+            'Expression-stmt': [['Expression', '#expr-stm-end' ,';'], ['break', '#expr-stm-break' , ';'], ';'],
+            'Selection-stmt': [['if', '(', 'Expression', '#sel-expr' , ')', 'Statement' , '#sel-endif', 'else', '#sel-beginelse' , 'Statement' , '#sel-endelse']],
+            'Iteration-stmt': [['repeat', '#it-start' , 'Statement', 'until', '(', 'Expression', '#it-check'  ,')']],
             'Return-stmt': [['return', 'Return-stmt-prime']],
             'Return-stmt-prime': [[';'], ['Expression', ';']],
             'Expression': [['Simple-expression-zegond'], ['#expr-id', 'id', 'B']],
-            'B': [['=','Expression', '#B-assign'], ['[', 'Expression', ']', 'H'], ['Simple-expression-prime']],
-            'H': [['=', 'Expression'], ['G', 'D','C']],
+            'B': [['=','Expression', '#B-assign'], ['[', 'Expression', '#B-expr-ind', ']', 'H'], ['Simple-expression-prime']],
+            'H': [['=', 'Expression','#H-assign'], ['G', 'D','C']],
             'Simple-expression-zegond':[['Additive-expression-zegond', 'C']],
             'Simple-expression-prime':[['Additive-expression-prime','C']],
-            'C' :[['Relop', 'Additive-expression'], ['epsilon']],
+            'C' :[['#C-relop' ,'Relop', 'Additive-expression' , '#C-rel'], ['epsilon']],
             'Relop':[['<'], ['==']],
             'Additive-expression': [['Term', 'D']],
             'Additive-expression-prime': [['Term-prime', 'D']],
@@ -41,18 +41,22 @@ class Grammar:
             'Term-prime': [['Factor-prime', 'G']],
             'Term-zegond': [['Factor-zegond', 'G']],
             'G': [['*', 'Factor','#G-mult', 'G'], ['epsilon']],
-            'Factor': [['(', 'Expression', ')'], ['#factor-id','id', 'Var-call-prime'], ['#factor-num','num']],
+            'Factor': [['(', 'Expression', '#factor-expr' , ')'], ['#factor-id','id', 'Var-call-prime'], ['#factor-num','num']],
             'Var-call-prime': [['(', 'Args', ')'], ['Var-prime']],
             'Var-prime': [['[', 'Expression', '#var-prime-ind' ,']'], ['epsilon']],
             'Factor-prime':[['(', '#factor-prime-arg-begin', 'Args', '#factor-prime-arg-end' ,')'], ['epsilon']],
-            'Factor-zegond':[['(', 'Expression', ')'], ['#factor-zeg-num','num']],
+            'Factor-zegond':[['(', 'Expression', '#factor-zeg-expr' , ')'], ['#factor-zeg-num','num']],
             'Args': [['Arg-list'], ['epsilon']],
             'Arg-list':[['Expression', 'Arg-list-prime']],
             'Arg-list-prime':[[',', 'Expression', 'Arg-list-prime'], ['epsilon']]
         }
         self.terminals = ['id', 'num', ';', '[', ']', '(', ')', '{' , '}', 'void', 'int', 'if','else','break','repeat','until','return', '<', '==', '=','+','-','*',',','$']
-        self.actions = ['#decl-id','#decl-var','#decl-arr','#decl-func',
-        '#expr-stm-end','#expr-id','#B-assign','#D-addop','#D-add','#G-mult','#factor-id', '#factor-num','#var-prime-ind','#factor-zeg-num','#factor-prime-arg','#factor-prime-arg-begin',
+        self.actions = [
+            '#decl-id','#decl-var','#decl-arr','#decl-func',
+            '#it-start', '#it-check', 
+            '#sel-expr' , '#sel-endif',  '#sel-beginelse' , '#sel-endelse'
+            '#expr-stm-end','#expr-stm-break','#expr-id','#B-assign','#B-expr-ind','#H-assign','#D-addop','#D-add','#G-mult',
+            '#factor-expr', '#factor-id', '#factor-num','#var-prime-ind','#factor-zeg-num', '#factor-zeg-expr', '#factor-prime-arg','#factor-prime-arg-begin','#C-relop','#C-rel',
         ]
         self.first_sets = {}
         self.follow_sets = {"Program": {'$'}}

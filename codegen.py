@@ -6,6 +6,8 @@ class CodeGen:
         self.curr_pb_address = 0 
         self.compiler = compiler
         self.bad_hash = {}
+        self.break_list = [] # tuples of (pb address of break, closest iteration scope)
+        self.it_scope_list = [] # elements of label of scope
         self.define_output()
 
 
@@ -48,16 +50,40 @@ class CodeGen:
         elif action_symb == '#expr-stm-end':
             self.compiler.semantic_stack.pop()
         
-        elif action_symb == '#expr-id':
-            addr = self.bad_hash[lookahead_token[1]]
-            self.compiler.semantic_stack.append(addr)
+        elif action_symb == '#expr-stm-break':
+            self.break_list.append((self.curr_pb_address, self.it_scope_list[-1]))
+            self.compiler.program_block.append(' ')
+            self.curr_pb_address += 1
         
-        elif action_symb == '#B-assign':
+        elif action_symb == '#expr-id' or action_symb == '#factor-id':
+            addr = self.bad_hash[lookahead_token[1]]
+            self.compiler.semantic_stack.append(str(addr))
+        
+        elif action_symb == '#B-assign' or action_symb == '#H-assign':
             top = self.compiler.semantic_stack[-1]
             top1 = self.compiler.semantic_stack[-2]
             self.compiler.program_block.append('(ASSIGN, ' + str(top) + ', '+ str(top1)+', )')
             self.curr_pb_address += 1
             self.compiler.semantic_stack.pop()
+        
+        elif action_symb == '#B-expr-ind' or action_symb == '#var-prime-ind':
+            top = self.compiler.semantic_stack[-1]  # index
+            top1 = self.compiler.semantic_stack[-2] # array
+            if top[0] == '#':
+                mem_addr = int(top1) + 4*int(top[1:])
+                self.compiler.semantic_stack.pop()
+                self.compiler.semantic_stack.pop()
+                self.compiler.semantic_stack.append(str(mem_addr))
+            elif top[0] == '@':
+                pass
+            else:
+                t = self.get_temp()
+                self.compiler.program_block.append('(ADD, ' + str(top) + ', '+ '#' + str(top1)+', '+ str(t)+' )')
+                self.curr_pb_address += 1
+                self.compiler.semantic_stack.pop()
+                self.compiler.semantic_stack.pop()
+                self.compiler.semantic_stack.append('@'+ str(t))
+
 
         elif action_symb == '#D-addop':
             self.compiler.semantic_stack.append(lookahead_token[1])
@@ -86,24 +112,9 @@ class CodeGen:
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.append(t)
-
-        elif action_symb == '#factor-id':
-            addr = self.bad_hash[lookahead_token[1]]
-            self.compiler.semantic_stack.append(addr)
         
         elif action_symb == '#factor-num' or action_symb == '#factor-zeg-num': 
             self.compiler.semantic_stack.append('#'+ lookahead_token[1])
-
-        elif action_symb == '#var-prime-ind':
-            top = self.compiler.semantic_stack[-1]  # index
-            top1 = self.compiler.semantic_stack[-2] # array
-            mem_addr = top1 + 4*top
-            t = self.get_temp()
-            self.compiler.program_block.append('(ASSIGN, '+ str(mem_addr) + ', '+  str(t) + ', )')
-            self.curr_pb_address += 1
-            self.compiler.semantic_stack.pop()
-            self.compiler.semantic_stack.pop()
-            self.compiler.semantic_stack.append(t)
 
         elif action_symb == '#factor-prime-arg-begin':
             self.compiler.semantic_stack.append("@")
@@ -114,13 +125,82 @@ class CodeGen:
                 args.append(self.compiler.semantic_stack[-1])
                 self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
-            func_addr = self.compiler.semantic_stack[-1]
+            func_addr = int(self.compiler.semantic_stack[-1])
             if self.bad_hash['output'] == func_addr and len(args) == 1:
                 self.compiler.program_block.append('(PRINT, '+ str(args[0]) + ', , )')
                 self.curr_pb_address += 1
 
-            
+        elif action_symb == '#C-relop':
+            self.compiler.semantic_stack.append(lookahead_token[1])
         
+        elif action_symb == '#C-rel':
+            top = self.compiler.semantic_stack[-1]
+            op = self.compiler.semantic_stack[-2]
+            top1 = self.compiler.semantic_stack[-3]
+            t = self.get_temp()
+            if op == '<':
+                self.compiler.program_block.append('(LT, ' + str(top1) + ', ' + str(top) + ', '+  str(t) +  ')')
+            else:
+                self.compiler.program_block.append('(EQ, ' + str(top) +  ', ' +  str(top1) + ', ' +  str(t) + ')')
+            self.curr_pb_address += 1
+            self.compiler.semantic_stack.pop()
+            self.compiler.semantic_stack.pop()
+            self.compiler.semantic_stack.pop()
+            self.compiler.semantic_stack.append(t)
+        elif action_symb == '#factor-expr'  or action_symb == '#factor-zeg-expr':
+            pass
+        elif action_symb == '#it-start':
+            if len(self.it_scope_list) == 0:
+                self.it_scope_list.append(0)
+            else:
+                self.it_scope_list.append(self.it_scope_list[-1] + 1)
+            self.compiler.semantic_stack.append(str(self.curr_pb_address))
+
+        elif action_symb == '#it-check':
+            top = self.compiler.semantic_stack[-1] #expression value
+            top1 = self.compiler.semantic_stack[-2] #iteration address
+            t = self.get_temp()
+            self.compiler.program_block.append('(EQ, ' + str(top) +  ', #0, ' +  str(t) + ')')
+            self.compiler.program_block.append('(JPF, ' + str(t) +  ', '+ str(top1) + ', )')
+            self.curr_pb_address += 2
+            self.compiler.semantic_stack.pop()
+            self.compiler.semantic_stack.pop()
+            while len(self.break_list) > 0 and self.break_list[-1][1] == self.it_scope_list[-1]:
+                self.compiler.program_block[self.break_list[-1][0]] = '(JP, '+str(self.curr_pb_address) + ', , )'
+                self.break_list.pop()
+            self.it_scope_list.pop()
+
+            
+        elif action_symb == '#sel-expr':
+            top = self.compiler.semantic_stack[-1] #expression value
+            t = self.get_temp()
+            self.compiler.program_block.append('(EQ, ' + str(top) +  ', #0, ' +  str(t) + ')')
+            self.compiler.program_block.append(' ')
+            self.compiler.semantic_stack.pop()
+            self.compiler.semantic_stack.append(str(t))
+            self.compiler.semantic_stack.append(str(self.curr_pb_address + 1))
+            self.curr_pb_address += 2
+
+            
+        elif action_symb == '#sel-endif':
+            self.compiler.program_block.append(' ')
+            self.compiler.semantic_stack.append(str(self.curr_pb_address))
+            self.curr_pb_address += 1
+        elif action_symb == '#sel-beginelse':
+            top = self.compiler.semantic_stack[-1]
+            top1 = self.compiler.semantic_stack[-2] # begin if address
+            top2 = self.compiler.semantic_stack[-3] # expression evaluation
+            self.compiler.program_block[int(top1)] = ('(JPF, ' + top2 + ', ' + str(self.curr_pb_address) + ', )')
+            self.compiler.semantic_stack.pop()
+            self.compiler.semantic_stack.pop()
+            self.compiler.semantic_stack.pop()
+            self.compiler.semantic_stack.append(top)
+
+        elif action_symb == '#sel-endelse':
+            top = self.compiler.semantic_stack[-1]
+            self.compiler.program_block[int(top)] = ('(JP, '  + str(self.curr_pb_address) + ', , )')
+            self.compiler.semantic_stack.pop()
+
 
 
         print("Action " + action_symb + " is taken.")
@@ -128,3 +208,4 @@ class CodeGen:
         for key,it in self.compiler.symbol_table.items():
             print(key, ' := ', it)
         print(self.compiler.semantic_stack)
+        print(self.compiler.program_block)
