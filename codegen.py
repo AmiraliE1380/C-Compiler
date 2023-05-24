@@ -78,7 +78,9 @@ class CodeGen:
                 pass
             else:
                 t = self.get_temp()
-                self.compiler.program_block.append('(ADD, ' + str(top) + ', '+ '#' + str(top1)+', '+ str(t)+' )')
+                s = self.get_temp()
+                self.compiler.program_block.append('(MULT, ' + str(top) + ', '+ '#4, '+ str(s)+' )')
+                self.compiler.program_block.append('(ADD, ' + str(s) + ', '+ '#' + str(top1)+', '+ str(t)+' )')
                 self.curr_pb_address += 1
                 self.compiler.semantic_stack.pop()
                 self.compiler.semantic_stack.pop()
