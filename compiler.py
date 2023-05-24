@@ -9,7 +9,7 @@ from grammar import Grammar
 # address = "PA1_testcases\PA1_testcases\T10\input.txt"
 # address = "P2_testcases\T09\input.txt"
 # address = "TestCases_phase3\TestCases\T2\input.txt"
-address = "TestCases_phase3/TestCases/T3/input.txt"
+address = "TestCases_phase3/TestCases/T10/input.txt"
 #address = 'input.txt'
 
 

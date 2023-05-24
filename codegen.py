@@ -81,7 +81,7 @@ class CodeGen:
                 s = self.get_temp()
                 self.compiler.program_block.append('(MULT, ' + str(top) + ', '+ '#4, '+ str(s)+' )')
                 self.compiler.program_block.append('(ADD, ' + str(s) + ', '+ '#' + str(top1)+', '+ str(t)+' )')
-                self.curr_pb_address += 1
+                self.curr_pb_address += 2
                 self.compiler.semantic_stack.pop()
                 self.compiler.semantic_stack.pop()
                 self.compiler.semantic_stack.append('@'+ str(t))
@@ -98,12 +98,12 @@ class CodeGen:
             if op == '+':
                 self.compiler.program_block.append('(ADD, ' + str(top) + ', ' + str(top1) + ', '+  str(t) +  ')')
             else:
-                self.compiler.program_block.append('(SUB, ' + str(top) +  ', ' +  str(top1) + ', ' +  str(t) + ')')
+                self.compiler.program_block.append('(SUB, ' + str(top1) +  ', ' +  str(top) + ', ' +  str(t) + ')')
             self.curr_pb_address += 1
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
-            self.compiler.semantic_stack.append(t)
+            self.compiler.semantic_stack.append(str(t))
 
         elif action_symb == '#G-mult':
             top = self.compiler.semantic_stack[-1]
@@ -172,25 +172,21 @@ class CodeGen:
 
             
         elif action_symb == '#sel-expr':
-            top = self.compiler.semantic_stack[-1] #expression value
-            t = self.get_temp()
-            self.compiler.program_block.append('(EQ, ' + str(top) +  ', #0, ' +  str(t) + ')')
             self.compiler.program_block.append(' ')
-            self.compiler.semantic_stack.pop()
-            self.compiler.semantic_stack.append(str(t))
-            self.compiler.semantic_stack.append(str(self.curr_pb_address + 1))
-            self.curr_pb_address += 2
+            self.compiler.semantic_stack.append(str(self.curr_pb_address))
+            self.curr_pb_address += 1
 
             
         elif action_symb == '#sel-endif':
             self.compiler.program_block.append(' ')
             self.compiler.semantic_stack.append(str(self.curr_pb_address))
             self.curr_pb_address += 1
+
         elif action_symb == '#sel-beginelse':
             top = self.compiler.semantic_stack[-1]
             top1 = self.compiler.semantic_stack[-2] # begin if address
             top2 = self.compiler.semantic_stack[-3] # expression evaluation
-            self.compiler.program_block[int(top1)] = ('(JPF, ' + top2 + ', ' + str(self.curr_pb_address) + ', )')
+            self.compiler.program_block[int(top1)] = ('(JPF, ' + str(top2) + ', ' + str(self.curr_pb_address) + ', )')
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
