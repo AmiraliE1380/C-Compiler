@@ -199,9 +199,9 @@ class CodeGen:
 
 
 
-        print("Action " + action_symb + " is taken.")
-        print('Lookahead token is : ', lookahead_token)
-        for key,it in self.compiler.symbol_table.items():
-            print(key, ' := ', it)
-        print(self.compiler.semantic_stack)
-        print(self.compiler.program_block)
+        # print("Action " + action_symb + " is taken.")
+        # print('Lookahead token is : ', lookahead_token)
+        # for key,it in self.compiler.symbol_table.items():
+        #     print(key, ' := ', it)
+        # print(self.compiler.semantic_stack)
+        # print(self.compiler.program_block)

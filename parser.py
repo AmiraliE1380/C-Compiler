@@ -70,7 +70,7 @@ class Parser:
                     current_state[1] = 0
                     current_state[2] = 0
             current_transition =  self.compiler.grammar[current_state[0]][current_state[1]][current_state[2]]
-            print('Current Rule: ',current_state[0], current_transition)
+            # print('Current Rule: ',current_state[0], current_transition)
             if is_action(current_transition):
                 self.compiler.codegen.code_gen(current_transition)
                 self.increment_state()
@@ -149,9 +149,9 @@ class Parser:
             if get_new_token:
                 self.compiler.lookahead_token = get_next_token()
                 self.compiler.lookahead_terminal = token_to_terminal(self.compiler.lookahead_token)
-            print('Current Terminal', self.compiler.lookahead_terminal)
+            # print('Current Terminal', self.compiler.lookahead_terminal)
             result,_=  self.run_dfa()   
-            print(_)         
+            # print(_)         
             if result == 0:
                 # print(lookahead_token)
                 # for pre, fill, node in RenderTree(parent_node):
@@ -166,8 +166,8 @@ class Parser:
                 if get_new_token == -1:
                     break
             # input("")
-        self.write_parse_tree()
-        self.write_errors()
+        # self.write_parse_tree()
+        # self.write_errors()
         self.write_codegen_output()
 
     # checks if a terminal is in the first set of the nonterminal
