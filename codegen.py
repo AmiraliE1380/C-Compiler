@@ -159,10 +159,8 @@ class CodeGen:
         elif action_symb == '#it-check':
             top = self.compiler.semantic_stack[-1] #expression value
             top1 = self.compiler.semantic_stack[-2] #iteration address
-            t = self.get_temp()
-            self.compiler.program_block.append('(EQ, ' + str(top) +  ', #0, ' +  str(t) + ')')
-            self.compiler.program_block.append('(JPF, ' + str(t) +  ', '+ str(top1) + ', )')
-            self.curr_pb_address += 2
+            self.compiler.program_block.append('(JPF, ' + str(top) +  ', '+ str(top1) + ', )')
+            self.curr_pb_address += 1
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
             while len(self.break_list) > 0 and self.break_list[-1][1] == self.it_scope_list[-1]:
