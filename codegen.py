@@ -149,8 +149,10 @@ class CodeGen:
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.append(t)
+
         elif action_symb == '#factor-expr'  or action_symb == '#factor-zeg-expr':
             pass
+
         elif action_symb == '#it-start':
             if len(self.it_scope_list) == 0:
                 self.it_scope_list.append(0)
