@@ -4,27 +4,36 @@ from token import is_nonterminal,is_action
 class Grammar:
     def __init__(self):
         # NT s start with a capital letter and Terminals start with small letters.
+
+        """Fun-declaration-prime -> #funDef ( Params #lastParam ) #funEnd Compound-stmt
+        Type-specifier -> #pushIdTypeInt int | #pushIdTypeVoid void
+        Params -> #pushIdTypeInt int #pushIdDec ID Param-prime Param-list | #noParam void
+        Param-list -> #incrementParamCounter , Param Param-list | EPSILON
+        Param -> Declaration-initial Param-prime
+        Param-prime -> #paramArr [  ] | EPSILON"""
         self.grammar = {
             'Program': [['Declaration-list','$']],
             'Declaration-list': [['Declaration', 'Declaration-list'], ['epsilon']],
             'Declaration': [['Declaration-initial', 'Declaration-prime']],
-            'Declaration-initial': [['Type-specifier', '#decl-id' ,'id']],
+            'Declaration-initial': [['Type-specifier', '#decl-id', 'id']],
             'Declaration-prime': [['Fun-declaration-prime'], ['Var-declaration-prime']],
             'Var-declaration-prime': [['#decl-var',';'], ['[','#decl-arr', 'num', ']', ';']],
-            'Fun-declaration-prime': [['#decl-func','(', 'Params', ')', 'Compound-stmt']],
+
+            'Fun-declaration-prime': [['#decl-func', '(', 'Params', '#last-param', ')', '#fun-end', 'Compound-stmt']],
             'Type-specifier': [['int'], ['void']],
-            'Params': [['int', 'id', 'Param-prime', 'Param-list'], ['void']],
+            'Params': [['int', '#decl-id', 'id', 'Param-prime', 'Param-list'], ['#no-param', 'void']],
             'Param-list': [[',', 'Param', 'Param-list'], ['epsilon']],
             'Param': [['Declaration-initial', 'Param-prime']],
-            'Param-prime': [['[', ']'],['epsilon']],
+            'Param-prime': [['#param-arr', '[', ']'], ['#decl-var', 'epsilon']],
+
             'Compound-stmt': [['{', 'Declaration-list', 'Statement-list', '}']],
             'Statement-list': [['Statement', 'Statement-list'], ['epsilon']],
             'Statement': [['Expression-stmt'], ['Compound-stmt'], ['Selection-stmt'], ['Iteration-stmt'], ['Return-stmt']],
             'Expression-stmt': [['Expression', '#expr-stm-end' ,';'], ['break', '#expr-stm-break' , ';'], ';'],
             'Selection-stmt': [['if', '(', 'Expression', '#sel-expr' , ')', 'Statement' , '#sel-endif', 'else', '#sel-beginelse' , 'Statement' , '#sel-endelse']],
             'Iteration-stmt': [['repeat', '#it-start' , 'Statement', 'until', '(', 'Expression', '#it-check'  ,')']],
-            'Return-stmt': [['return', 'Return-stmt-prime']],
-            'Return-stmt-prime': [[';'], ['Expression', ';']],
+            'Return-stmt': [['return', 'Return-stmt-prime']], #changed
+            'Return-stmt-prime': [['#return-void', ';'], ['Expression', '#return-non-void', ';']], #changed
             'Expression': [['Simple-expression-zegond'], ['#expr-id', 'id', 'B']],
             'B': [['=','Expression', '#B-assign'], ['[', 'Expression', '#B-expr-ind', ']', 'H'], ['Simple-expression-prime']],
             'H': [['=', 'Expression','#H-assign'], ['G', 'D','C']],
@@ -42,7 +51,7 @@ class Grammar:
             'Term-zegond': [['Factor-zegond', 'G']],
             'G': [['*', 'Factor','#G-mult', 'G'], ['epsilon']],
             'Factor': [['(', 'Expression', '#factor-expr' , ')'], ['#factor-id','id', 'Var-call-prime'], ['#factor-num','num']],
-            'Var-call-prime': [['(', 'Args', ')'], ['Var-prime']],
+            'Var-call-prime': [['(', 'Args', '#call', ')'], ['Var-prime']],
             'Var-prime': [['[', 'Expression', '#var-prime-ind' ,']'], ['epsilon']],
             'Factor-prime':[['(', '#factor-prime-arg-begin', 'Args', '#factor-prime-arg-end' ,')'], ['epsilon']],
             'Factor-zegond':[['(', 'Expression', '#factor-zeg-expr' , ')'], ['#factor-zeg-num','num']],
@@ -54,7 +63,10 @@ class Grammar:
         self.actions = [
             '#decl-id','#decl-var','#decl-arr','#decl-func',
             '#it-start', '#it-check', 
-            '#sel-expr' , '#sel-endif',  '#sel-beginelse' , '#sel-endelse'
+            '#sel-expr' , '#sel-endif',  '#sel-beginelse' , '#sel-endelse',
+            '#return-void', '#return-non-void', '#call', '#last-param', '#fun-end',  # new
+            '#no-param',  # new
+            # more action symbols required! :")
             '#expr-stm-end','#expr-stm-break','#expr-id','#B-assign','#B-expr-ind','#H-assign','#D-addop','#D-add','#G-mult',
             '#factor-expr', '#factor-id', '#factor-num','#var-prime-ind','#factor-zeg-num', '#factor-zeg-expr', '#factor-prime-arg','#factor-prime-arg-begin','#C-relop','#C-rel',
         ]
@@ -101,8 +113,9 @@ class Grammar:
         if variable in self.follow_sets:
             return self.follow_sets[variable]  
         self.follow_set_init()
-        return self.follow_sets[variable]   
-        
+        return self.follow_sets[variable]
+
+
     # calculates all the follow sets
     def follow_set_init(self):
         for vari in self.grammar:

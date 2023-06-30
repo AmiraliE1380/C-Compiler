@@ -28,6 +28,7 @@ class CodeGen:
         if action_symb == '#decl-id':
             self.compiler.symbol_table[self.curr_mem_address] =  {'lexeme' : lookahead_token[1], 'type': lookahead_token[0],
              'lineno' : lookahead_token[2], 'init_mem' : self.curr_mem_address }
+            print(f'lineno:{lookahead_token[2]}---lexeme:{lookahead_token[1]}')
             self.bad_hash[lookahead_token[1]] =self.curr_mem_address
 
 
@@ -35,6 +36,7 @@ class CodeGen:
             self.compiler.symbol_table[self.curr_mem_address]['attr'] = {'type': 'var', 'mem_size': 1}
             self.compiler.memory.append(0)
             self.curr_mem_address += 4
+            print('hi')
 
         elif action_symb == '#decl-arr':
             self.compiler.symbol_table[self.curr_mem_address]['type'] =  {'type': 'var', 'mem_size': int(lookahead_token[1])}
@@ -200,6 +202,24 @@ class CodeGen:
             self.compiler.semantic_stack.pop()
 
 
+        # phase 4 action symbols
+        elif action_symb == '#last-param':
+            pass
+
+        elif action_symb == '#return-non-void':
+            pass
+
+        elif action_symb == '#call':
+            pass
+
+        elif action_symb == '#return-void':
+            pass
+
+        elif action_symb == '#return-non-void':
+            pass
+
+        # else:
+        #     print('error')
 
         # print("Action " + action_symb + " is taken.")
         # print('Lookahead token is : ', lookahead_token)
