@@ -5,10 +5,16 @@ class CodeGen:
         self.curr_mem_address = 0
         self.curr_pb_address = 0 
         self.compiler = compiler
-        self.bad_hash = {}
+        self.bad_hash = {}  # maps id of var or func to mem location
+                            # Ex: bad_hash={'output': 0, 'fun': 4, 'zz': 8, 'x': 12, 'main': 20, 'a': 24, 'b': 28, 'c': 32}
+
         self.break_list = [] # tuples of (pb address of break, closest iteration scope)
         self.it_scope_list = [] # elements of label of scope
         self.define_output()
+        self.latest_id = None
+        self.current_func = 'main'
+        self.func_arg_loc = None
+        self.args_num = 0
 
 
     def get_temp(self):
@@ -28,7 +34,7 @@ class CodeGen:
         if action_symb == '#decl-id':
             self.compiler.symbol_table[self.curr_mem_address] =  {'lexeme' : lookahead_token[1], 'type': lookahead_token[0],
              'lineno' : lookahead_token[2], 'init_mem' : self.curr_mem_address }
-            print(f'lineno:{lookahead_token[2]}---lexeme:{lookahead_token[1]}')
+            #print(f'lineno:{lookahead_token[2]}---lexeme:{lookahead_token[1]}')
             self.bad_hash[lookahead_token[1]] =self.curr_mem_address
 
 
@@ -36,7 +42,7 @@ class CodeGen:
             self.compiler.symbol_table[self.curr_mem_address]['attr'] = {'type': 'var', 'mem_size': 1}
             self.compiler.memory.append(0)
             self.curr_mem_address += 4
-            print('hi')
+            # print('hi')
 
         elif action_symb == '#decl-arr':
             self.compiler.symbol_table[self.curr_mem_address]['type'] =  {'type': 'var', 'mem_size': int(lookahead_token[1])}
@@ -45,7 +51,7 @@ class CodeGen:
                 self.curr_mem_address += 4
     
         elif action_symb == '#decl-func':
-            self.compiler.symbol_table[self.curr_mem_address]['type'] =  {'type': 'func', 'mem_size': 1}
+            self.compiler.symbol_table[self.curr_mem_address]['type'] = {'type': 'func', 'mem_size': 1}
             self.compiler.memory.append(-1)
             self.curr_mem_address += 4
 
@@ -123,16 +129,23 @@ class CodeGen:
         elif action_symb == '#factor-prime-arg-begin':
             self.compiler.semantic_stack.append("@")
         
-        elif action_symb =='#factor-prime-arg-end':
-            args = []
-            while self.compiler.semantic_stack[-1] != '@':
-                args.append(self.compiler.semantic_stack[-1])
-                self.compiler.semantic_stack.pop()
-            self.compiler.semantic_stack.pop()
-            func_addr = int(self.compiler.semantic_stack[-1])
-            if self.bad_hash['output'] == func_addr and len(args) == 1:
-                self.compiler.program_block.append('(PRINT, '+ str(args[0]) + ', , )')
-                self.curr_pb_address += 1
+        elif action_symb == '#factor-prime-arg-end':
+            pass
+            #print(f'semantic_stack={self.compiler.semantic_stack}')
+            # args = []
+            # while self.compiler.semantic_stack[-1] != '@':
+            #     args.append(self.compiler.semantic_stack[-1])
+            #     self.compiler.semantic_stack.pop()
+            # print(f'args={args}')
+            # #print(self.curr_mem_address)
+            # self.compiler.semantic_stack.pop()
+            # func_addr = int(self.compiler.semantic_stack[-1])
+            # if self.bad_hash['output'] == func_addr and len(args) == 1:
+            #     self.compiler.program_block.append('(PRINT, '+ str(args[0]) + ', , )')
+            #     self.curr_pb_address += 1
+            # #else:  # the call of other functions
+                #print(f'bad_hash={self.bad_hash}')
+
 
         elif action_symb == '#C-relop':
             self.compiler.semantic_stack.append(lookahead_token[1])
@@ -209,8 +222,50 @@ class CodeGen:
         elif action_symb == '#return-non-void':
             pass
 
+        elif action_symb == '#latest-id':
+            self.latest_id = lookahead_token[1]
+
         elif action_symb == '#call':
-            pass
+            self.current_func = self.latest_id
+            self.func_arg_loc = self.bad_hash[self.current_func]
+            self.args_num = 0
+            print(f'\ncurrent called function={self.current_func}')
+            print(f'semantic stack when call={self.compiler.semantic_stack}')
+            print(f'bad_hash={self.bad_hash}')
+
+        elif action_symb == '#arg':
+            self.args_num += 1
+            #self.compiler.program_block.append('(ASSIGN, ' + str(top) + ', ' + str(top1) + ', )') #change this
+            #print(f'arg mem loc = {self.curr_mem_address}')
+
+        elif action_symb == '#end-call':
+            args = []
+            print(f'ss={self.compiler.semantic_stack}')
+            print(f'args_num={self.args_num}')
+            while self.args_num > 0:
+                self.args_num -= 1
+                args.append(self.compiler.semantic_stack[-1])
+                self.compiler.semantic_stack.pop()
+            if self.compiler.semantic_stack[-1] == '@':
+                self.compiler.semantic_stack.pop()
+
+            print(f'args={args}')
+            func_addr = int(self.compiler.semantic_stack[-1])
+            if self.bad_hash['output'] == func_addr and len(args) == 1:
+                self.compiler.program_block.append('(PRINT, ' + str(args[0]) + ', , )')
+                self.curr_pb_address += 1
+            else:
+                args.reverse()
+                for arg in args:
+                    top = self.compiler.semantic_stack[-1]
+                    self.func_arg_loc += 4
+                    self.compiler.program_block.append('(ASSIGN, ' + str(arg) + ', ' + str(self.func_arg_loc) + ', )')
+                    self.curr_pb_address += 1
+                    #print(f'sssss={self.compiler.semantic_stack}')
+
+
+
+
 
         elif action_symb == '#return-void':
             pass

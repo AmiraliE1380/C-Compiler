@@ -34,7 +34,7 @@ class Grammar:
             'Iteration-stmt': [['repeat', '#it-start' , 'Statement', 'until', '(', 'Expression', '#it-check'  ,')']],
             'Return-stmt': [['return', 'Return-stmt-prime']], #changed
             'Return-stmt-prime': [['#return-void', ';'], ['Expression', '#return-non-void', ';']], #changed
-            'Expression': [['Simple-expression-zegond'], ['#expr-id', 'id', 'B']],
+            'Expression': [['Simple-expression-zegond'], ['#expr-id', '#latest-id', 'id', 'B']],
             'B': [['=','Expression', '#B-assign'], ['[', 'Expression', '#B-expr-ind', ']', 'H'], ['Simple-expression-prime']],
             'H': [['=', 'Expression','#H-assign'], ['G', 'D','C']],
             'Simple-expression-zegond':[['Additive-expression-zegond', 'C']],
@@ -47,25 +47,26 @@ class Grammar:
             'D': [['#D-addop','Addop','Term','#D-add' ,'D'], ['epsilon']],
             'Addop': [['+'], ['-']],
             'Term': [['Factor', 'G']],
-            'Term-prime': [['Factor-prime', 'G']],
+            'Term-prime': [['Factor-prime','G']],
             'Term-zegond': [['Factor-zegond', 'G']],
             'G': [['*', 'Factor','#G-mult', 'G'], ['epsilon']],
-            'Factor': [['(', 'Expression', '#factor-expr' , ')'], ['#factor-id','id', 'Var-call-prime'], ['#factor-num','num']],
-            'Var-call-prime': [['(', 'Args', '#call', ')'], ['Var-prime']],
+            'Factor': [['(', 'Expression', '#factor-expr' , ')'], ['#factor-id', '#latest-id', 'id', 'Var-call-prime'], ['#factor-num','num']],
+            'Var-call-prime': [['#call', '(', 'Args', ')', '#end-call'], ['#dummy', 'Var-prime']],
             'Var-prime': [['[', 'Expression', '#var-prime-ind' ,']'], ['epsilon']],
-            'Factor-prime':[['(', '#factor-prime-arg-begin', 'Args', '#factor-prime-arg-end' ,')'], ['epsilon']],
-            'Factor-zegond':[['(', 'Expression', '#factor-zeg-expr' , ')'], ['#factor-zeg-num','num']],
+            'Factor-prime':[['#call', '(', '#factor-prime-arg-begin', 'Args', '#factor-prime-arg-end' ,')', '#end-call'], ['epsilon']],
+            'Factor-zegond':[['(', 'Expression', '#factor-zeg-expr', ')'], ['#factor-zeg-num','num']],
             'Args': [['Arg-list'], ['epsilon']],
-            'Arg-list':[['Expression', 'Arg-list-prime']],
-            'Arg-list-prime':[[',', 'Expression', 'Arg-list-prime'], ['epsilon']]
+            'Arg-list':[['Expression', '#arg', 'Arg-list-prime']],
+            'Arg-list-prime':[[',', 'Expression', '#arg', 'Arg-list-prime'], ['epsilon']]
         }
         self.terminals = ['id', 'num', ';', '[', ']', '(', ')', '{' , '}', 'void', 'int', 'if','else','break','repeat','until','return', '<', '==', '=','+','-','*',',','$']
         self.actions = [
             '#decl-id','#decl-var','#decl-arr','#decl-func',
             '#it-start', '#it-check', 
-            '#sel-expr' , '#sel-endif',  '#sel-beginelse' , '#sel-endelse',
-            '#return-void', '#return-non-void', '#call', '#last-param', '#fun-end',  # new
-            '#no-param',  # new
+            '#sel-expr', '#sel-endif',  '#sel-beginelse' , '#sel-endelse',
+            '#return-void', '#return-non-void', '#call', '#end-call', '#arg', '#last-param', '#fun-end',  # new
+            '#latest-id', '#no-param',  # new
+            '#dummy', # delete thiss
             # more action symbols required! :")
             '#expr-stm-end','#expr-stm-break','#expr-id','#B-assign','#B-expr-ind','#H-assign','#D-addop','#D-add','#G-mult',
             '#factor-expr', '#factor-id', '#factor-num','#var-prime-ind','#factor-zeg-num', '#factor-zeg-expr', '#factor-prime-arg','#factor-prime-arg-begin','#C-relop','#C-rel',
