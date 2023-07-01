@@ -29,6 +29,16 @@ class CodeGen:
         self.bad_hash['output'] =self.curr_mem_address
         self.curr_mem_address += 4
 
+
+    def goto_func_loc(self):
+        callee_loc = self.bad_hash[self.current_func]
+        return_addr = self.curr_pb_address
+        return_addr_saving_position = self.get_temp()
+        self.compiler.program_block.append('(ASSIGN, #' + str(return_addr) + ', ' + str(return_addr_saving_position) + ', )')
+        self.compiler.program_block.append('(JP, '+str(callee_loc) + ', , )')  # reconsider
+        self.curr_pb_address += 2
+
+
     def code_gen(self,action_symb):
         lookahead_token = self.compiler.lookahead_token
         if action_symb == '#decl-id':
@@ -238,6 +248,7 @@ class CodeGen:
             #self.compiler.program_block.append('(ASSIGN, ' + str(top) + ', ' + str(top1) + ', )') #change this
             #print(f'arg mem loc = {self.curr_mem_address}')
 
+
         elif action_symb == '#end-call':
             args = []
             print(f'ss={self.compiler.semantic_stack}')
@@ -262,6 +273,7 @@ class CodeGen:
                     self.compiler.program_block.append('(ASSIGN, ' + str(arg) + ', ' + str(self.func_arg_loc) + ', )')
                     self.curr_pb_address += 1
                     #print(f'sssss={self.compiler.semantic_stack}')
+                self.goto_func_loc()
 
 
 

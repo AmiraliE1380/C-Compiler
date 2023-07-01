@@ -3,4 +3,6 @@
 2	(ASSIGN, #6, 28, )
 3	(ASSIGN, #5, 8, )
 4	(ASSIGN, #4, 12, )
-5	(ASSIGN, 28, 32, )
+5	(ASSIGN, #5, 36, )
+6	(JP, 4, , )
+7	(ASSIGN, 28, 32, )

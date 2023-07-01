@@ -3,6 +3,7 @@
 int fun(int a, b) {
     int x;
     x = a + b;
+
 }
 
 
@@ -11,5 +12,5 @@ void main(void){
     int d;
     c = 6;
     fun(5, 4);
-    d = c;
+    d = c ;
 }
