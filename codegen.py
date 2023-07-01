@@ -8,13 +8,15 @@ class CodeGen:
         self.bad_hash = {}  # maps id of var or func to mem location
                             # Ex: bad_hash={'output': 0, 'fun': 4, 'zz': 8, 'x': 12, 'main': 20, 'a': 24, 'b': 28, 'c': 32}
 
-        self.break_list = [] # tuples of (pb address of break, closest iteration scope)
-        self.it_scope_list = [] # elements of label of scope
+        self.break_list = []  # tuples of (pb address of break, closest iteration scope)
+        self.it_scope_list = []  # elements of label of scope
         self.define_output()
+
         self.latest_id = None
         self.current_func = 'main'
         self.func_arg_loc = None
         self.args_num = 0
+        self.func_locations = {}
 
 
     def get_temp(self):
@@ -31,21 +33,21 @@ class CodeGen:
 
 
     def goto_func_loc(self):
-        callee_loc = self.bad_hash[self.current_func]
-        return_addr = self.curr_pb_address
         return_addr_saving_position = self.get_temp()
-        self.compiler.program_block.append('(ASSIGN, #' + str(return_addr) + ', ' + str(return_addr_saving_position) + ', )')
-        self.compiler.program_block.append('(JP, '+str(callee_loc) + ', , )')  # reconsider
+        self.compiler.program_block.append('(ASSIGN, #' + str(self.curr_pb_address) + ', ' + str(return_addr_saving_position) + ', )')
+        self.compiler.program_block.append('(JP, '+str(self.func_locations[self.current_func]) + ', , )')  # reconsider
         self.curr_pb_address += 2
 
 
     def code_gen(self,action_symb):
         lookahead_token = self.compiler.lookahead_token
+
         if action_symb == '#decl-id':
             self.compiler.symbol_table[self.curr_mem_address] =  {'lexeme' : lookahead_token[1], 'type': lookahead_token[0],
              'lineno' : lookahead_token[2], 'init_mem' : self.curr_mem_address }
             #print(f'lineno:{lookahead_token[2]}---lexeme:{lookahead_token[1]}')
             self.bad_hash[lookahead_token[1]] =self.curr_mem_address
+            self.latest_id_decl = lookahead_token[1]
 
 
         elif action_symb == '#decl-var':
@@ -60,10 +62,14 @@ class CodeGen:
                 self.compiler.memory.append(0)
                 self.curr_mem_address += 4
     
+
         elif action_symb == '#decl-func':
             self.compiler.symbol_table[self.curr_mem_address]['type'] = {'type': 'func', 'mem_size': 1}
             self.compiler.memory.append(-1)
             self.curr_mem_address += 4
+            self.func_locations[self.latest_id_decl] = self.curr_pb_address
+            print(f'func_locations={self.func_locations}')
+
 
         elif action_symb == '#expr-stm-end':
             self.compiler.semantic_stack.pop()
@@ -252,7 +258,7 @@ class CodeGen:
         elif action_symb == '#end-call':
             args = []
             print(f'ss={self.compiler.semantic_stack}')
-            print(f'args_num={self.args_num}')
+            # print(f'args_num={self.args_num}')
             while self.args_num > 0:
                 self.args_num -= 1
                 args.append(self.compiler.semantic_stack[-1])
