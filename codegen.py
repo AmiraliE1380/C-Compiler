@@ -39,7 +39,6 @@ class CodeGen:
         self.curr_pb_address += 2
 
 
-
     def code_gen(self,action_symb):
         lookahead_token = self.compiler.lookahead_token
 
@@ -288,6 +287,7 @@ class CodeGen:
 
         elif action_symb == '#return-void':
             pass
+
 
         elif action_symb == '#return-non-void':
             pass
