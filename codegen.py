@@ -20,6 +20,7 @@ class CodeGen:
         self.curr_func_temp_start = 0
         self.func_return_addr = {}
         self.curr_decl_func = None
+        self.funcs_with_return = []
 
 
     def get_temp(self):
@@ -37,9 +38,22 @@ class CodeGen:
 
     def goto_func_loc(self):
         return_addr_saving_position = self.func_return_addr[self.current_func]
-        self.compiler.program_block.append('(ASSIGN, #' + str(self.curr_pb_address) + ', ' + str(return_addr_saving_position) + ', )')
+        self.compiler.program_block.append('(ASSIGN, #' +
+                                           str(self.curr_pb_address+2) +  # plus 2 is to skip this and the next jump instruction
+                                           ', ' + str(return_addr_saving_position) + ', )')
         self.compiler.program_block.append('(JP, '+str(self.func_locations[self.current_func]) + ', , )')  # reconsider
         self.curr_pb_address += 2
+
+
+    def handle_return_value(self):
+        print(f'self.func_has_return={self.funcs_with_return}')
+        if self.current_func in self.funcs_with_return:
+            print('')
+            return_val_addr = self.func_return_addr[self.current_func] - 4
+            t = self.get_temp()
+            self.compiler.program_block.append('(ASSIGN, ' + str(return_val_addr) + ', ' + str(t) + ', )')
+            self.curr_pb_address += 1
+            self.compiler.semantic_stack.append(t)
 
 
     def code_gen(self,action_symb):
@@ -279,6 +293,7 @@ class CodeGen:
                     #print(f'sssss={self.compiler.semantic_stack}')
                 print(f'self.func_return_addr={self.func_return_addr}')
                 self.goto_func_loc()
+                self.handle_return_value()
 
 
 
@@ -288,12 +303,12 @@ class CodeGen:
             self.get_temp()
 
 
-        elif action_symb == '#return-void':
-            pass
+        # elif action_symb == '#return-void':
+        #     pass
 
 
         elif action_symb == '#return-non-void':
-            pass
+            self.funcs_with_return.append(self.curr_decl_func)
 
         # else:
         #     print('error')

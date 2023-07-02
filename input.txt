@@ -1,19 +1,13 @@
 /*==== sample S1  ====*/
 
-int sex;
 
-int fun(int a, b) {
-    int x;
-    x = a + b;
-
+int fun(void) {
+    return 5;
 }
 
 
 void main(void){
-    int c;
-    int d;
-    c = 6;
-    fun(4, 5);
-    fun(69, 85);
-    d = c ;
+    int a;
+    a = fun();
+    output(a);
 }
