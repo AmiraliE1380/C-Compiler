@@ -3,7 +3,7 @@
 class CodeGen:
     def __init__(self,compiler):
         self.curr_mem_address = 0
-        self.curr_pb_address = 0 
+        self.curr_pb_address = 1
         self.compiler = compiler
         self.bad_hash = {}  # maps id of var or func to mem location
                             # Ex: bad_hash={'output': 0, 'fun': 4, 'zz': 8, 'x': 12, 'main': 20, 'a': 24, 'b': 28, 'c': 32}
@@ -17,10 +17,10 @@ class CodeGen:
         self.func_arg_loc = None
         self.args_num = 0
         self.func_locations = {}
-        self.curr_func_temp_start = 0
         self.func_return_addr = {}
         self.curr_decl_func = None
         self.funcs_with_return = []
+        self.call_seq_stack = ['main']
 
 
     def get_temp(self):
@@ -41,7 +41,7 @@ class CodeGen:
         self.compiler.program_block.append('(ASSIGN, #' +
                                            str(self.curr_pb_address+2) +  # plus 2 is to skip this and the next jump instruction
                                            ', ' + str(return_addr_saving_position) + ', )')
-        self.compiler.program_block.append('(JP, '+str(self.func_locations[self.current_func]) + ', , )')  # reconsider
+        self.compiler.program_block.append('(JP, #'+str(self.func_locations[self.current_func]) + ', , )')  # reconsider
         self.curr_pb_address += 2
 
 
@@ -86,6 +86,10 @@ class CodeGen:
             self.curr_mem_address += 4
             self.func_locations[self.latest_id_decl] = self.curr_pb_address
             self.curr_decl_func = self.latest_id_decl
+            if self.curr_decl_func == 'main':
+                jump_main_inst = '(JP, #' + str(self.curr_pb_address) + ', , )'
+                self.compiler.program_block = [jump_main_inst] + self.compiler.program_block
+
             print(f'func_locations={self.func_locations}')
 
 
@@ -255,6 +259,7 @@ class CodeGen:
 
         elif action_symb == '#call':
             self.current_func = self.latest_id
+            self.call_seq_stack.append(self.current_func)
             self.func_arg_loc = self.bad_hash[self.current_func]
             self.args_num = 0
             print(f'\ncurrent called function={self.current_func}')
@@ -298,7 +303,7 @@ class CodeGen:
 
 
         elif action_symb == '#save-return-loc':
-            self.func_return_addr[self.curr_decl_func] = self.curr_pb_address
+            self.func_return_addr[self.curr_decl_func] = self.curr_mem_address
             print(f'self.func_return_addr={self.func_return_addr}')
             self.get_temp()
 
@@ -310,7 +315,16 @@ class CodeGen:
         elif action_symb == '#return-non-void':
             self.funcs_with_return.append(self.curr_decl_func)
 
-        # else:
+
+        elif action_symb == '#return':
+            #fix this!
+            #print(f'\n\nself.call_seq_stack={self.call_seq_stack}\n\n')
+            #print(self.func_return_addr[-1])
+            #self.func_return_addr[self.call_seq_stack.pop()]
+            self.compiler.program_block.append('(JP, ' + str(self.curr_mem_address - 4) + ', , )')
+            self.curr_pb_address += 1
+
+            # else:
         #     print('error')
 
         # print("Action " + action_symb + " is taken.")
