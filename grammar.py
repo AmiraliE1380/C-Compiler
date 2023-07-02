@@ -19,7 +19,7 @@ class Grammar:
             'Declaration-prime': [['Fun-declaration-prime'], ['Var-declaration-prime']],
             'Var-declaration-prime': [['#decl-var',';'], ['[','#decl-arr', 'num', ']', ';']],
 
-            'Fun-declaration-prime': [['#decl-func', '(', 'Params', '#last-param', ')', '#fun-end', 'Compound-stmt']],
+            'Fun-declaration-prime': [['#decl-func', '(', 'Params', ')', '#fun-end', 'Compound-stmt', '#save-return-loc']],
             'Type-specifier': [['int'], ['void']],
             'Params': [['int', '#decl-id', 'id', 'Param-prime', 'Param-list'], ['#no-param', 'void']],
             'Param-list': [[',', 'Param', 'Param-list'], ['epsilon']],
@@ -64,7 +64,8 @@ class Grammar:
             '#decl-id','#decl-var','#decl-arr','#decl-func',
             '#it-start', '#it-check', 
             '#sel-expr', '#sel-endif',  '#sel-beginelse' , '#sel-endelse',
-            '#return-void', '#return-non-void', '#call', '#end-call', '#arg', '#last-param', '#fun-end',  # new
+            '#return-void', '#return-non-void', '#call', '#end-call', '#arg', '#fun-end',  # new
+            '#save-return-loc',  # new
             '#latest-id', '#no-param',  # new
             '#dummy', # delete thiss
             # more action symbols required! :")

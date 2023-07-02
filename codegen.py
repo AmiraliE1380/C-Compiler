@@ -17,6 +17,9 @@ class CodeGen:
         self.func_arg_loc = None
         self.args_num = 0
         self.func_locations = {}
+        self.curr_func_temp_start = 0
+        self.func_return_addr = {}
+        self.curr_decl_func = None
 
 
     def get_temp(self):
@@ -33,7 +36,7 @@ class CodeGen:
 
 
     def goto_func_loc(self):
-        return_addr_saving_position = self.get_temp()
+        return_addr_saving_position = self.func_return_addr[self.current_func]
         self.compiler.program_block.append('(ASSIGN, #' + str(self.curr_pb_address) + ', ' + str(return_addr_saving_position) + ', )')
         self.compiler.program_block.append('(JP, '+str(self.func_locations[self.current_func]) + ', , )')  # reconsider
         self.curr_pb_address += 2
@@ -68,6 +71,7 @@ class CodeGen:
             self.compiler.memory.append(-1)
             self.curr_mem_address += 4
             self.func_locations[self.latest_id_decl] = self.curr_pb_address
+            self.curr_decl_func = self.latest_id_decl
             print(f'func_locations={self.func_locations}')
 
 
@@ -232,12 +236,6 @@ class CodeGen:
 
 
         # phase 4 action symbols
-        elif action_symb == '#last-param':
-            pass
-
-        elif action_symb == '#return-non-void':
-            pass
-
         elif action_symb == '#latest-id':
             self.latest_id = lookahead_token[1]
 
@@ -279,10 +277,15 @@ class CodeGen:
                     self.compiler.program_block.append('(ASSIGN, ' + str(arg) + ', ' + str(self.func_arg_loc) + ', )')
                     self.curr_pb_address += 1
                     #print(f'sssss={self.compiler.semantic_stack}')
+                print(f'self.func_return_addr={self.func_return_addr}')
                 self.goto_func_loc()
 
 
 
+        elif action_symb == '#save-return-loc':
+            self.func_return_addr[self.curr_decl_func] = self.curr_pb_address
+            print(f'self.func_return_addr={self.func_return_addr}')
+            self.get_temp()
 
 
         elif action_symb == '#return-void':

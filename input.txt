@@ -1,5 +1,7 @@
 /*==== sample S1  ====*/
 
+int sex;
+
 int fun(int a, b) {
     int x;
     x = a + b;
@@ -11,6 +13,7 @@ void main(void){
     int c;
     int d;
     c = 6;
-    fun(5, 4);
+    fun(4, 5);
+    fun(69, 85);
     d = c ;
 }
