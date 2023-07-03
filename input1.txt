@@ -1,0 +1,11 @@
+/*==== Sample 2 =====*/
+int foo(void){
+	return 5;
+}
+void main ( void )
+{
+	int i;
+	i = foo () ;
+	output (i);
+}
+

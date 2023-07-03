@@ -361,7 +361,7 @@ class CodeGen:
                 t = self.get_temp()
                 self.compiler.program_block.append('(ASSIGN, #' + str(lookahead_token[1]) + ', ' + str(t) + ', )')
                 self.curr_pb_address += 1
-                self.compiler.semantic_stack.append(t)
+                #self.compiler.semantic_stack.append(t)
 
         # else:
         #     print('error')

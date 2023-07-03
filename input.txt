@@ -1,24 +1,21 @@
-/*  ==  Sample 5 ===
-int a;
-
-void func(void) {
-    if(0<1) {
-        output(1);
-    } else {
-        output(0);
-    }
-}
-int x[10];
-*/
-void fun(void) {
-    if (1 < 2) {
-	    output(85);
-	} else {
-	    output(35);
+/*==== Sample 2 =====*/
+int foo(int x){
+	int a;
+	int b;
+	a = 10;
+	b = 1;
+	output(x);
+	if(a < x){
+		return b;
 	}
+	else {
+		return 2;
+	} 
+}
+void main ( void )
+{
+	int i;
+	i = foo (4) ;
+	output (i);
 }
 
-void main(void) {
-
-    fun();
-}
