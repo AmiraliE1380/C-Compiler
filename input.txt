@@ -1,7 +1,7 @@
 /*==== sample S1  ====*/
 
 int fun(void) {
-    return 22;
+    return 85 + 69;
 }
 
 

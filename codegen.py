@@ -46,14 +46,15 @@ class CodeGen:
 
 
     def handle_return_value(self):
-        print(f'self.func_has_return={self.funcs_with_return}')
+        # print(f'self.func_has_return={self.funcs_with_return}')
         if self.current_func in self.funcs_with_return:
-            print('')
             return_val_addr = self.func_return_addr[self.current_func] - 4
             t = self.get_temp()
-            self.compiler.program_block.append('(ASSIGN, ' + str(return_val_addr) + ', ' + str(t) + ', )')
+            print(f't={t}')
+            self.compiler.program_block.append('(AASSIGN, ' + str(return_val_addr) + ', ' + str(t) + ', )')
             self.curr_pb_address += 1
-            self.compiler.semantic_stack.append(t)
+            print(f'temp={t}')
+            #self.compiler.semantic_stack.append(t)
 
 
     def code_gen(self,action_symb):
@@ -90,7 +91,7 @@ class CodeGen:
                 jump_main_inst = '(JP, #' + str(self.curr_pb_address) + ', , )'
                 self.compiler.program_block = [jump_main_inst] + self.compiler.program_block
 
-            print(f'func_locations={self.func_locations}')
+            #print(f'func_locations={self.func_locations}')
 
 
         elif action_symb == '#expr-stm-end':
@@ -108,7 +109,10 @@ class CodeGen:
         elif action_symb == '#B-assign' or action_symb == '#H-assign':
             top = self.compiler.semantic_stack[-1]
             top1 = self.compiler.semantic_stack[-2]
+
             self.compiler.program_block.append('(ASSIGN, ' + str(top) + ', '+ str(top1)+', )')
+            print(f'{self.curr_pb_address}.\t{self.compiler.program_block[-1]}')
+            print(f'ss={self.compiler.semantic_stack}')
             self.curr_pb_address += 1
             self.compiler.semantic_stack.pop()
         
@@ -262,9 +266,9 @@ class CodeGen:
             self.call_seq_stack.append(self.current_func)
             self.func_arg_loc = self.bad_hash[self.current_func]
             self.args_num = 0
-            print(f'\ncurrent called function={self.current_func}')
-            print(f'semantic stack when call={self.compiler.semantic_stack}')
-            print(f'bad_hash={self.bad_hash}')
+            #print(f'\ncurrent called function={self.current_func}')
+            # print(f'semantic stack when call={self.compiler.semantic_stack}')
+            # print(f'bad_hash={self.bad_hash}')
 
         elif action_symb == '#arg':
             self.args_num += 1
@@ -274,7 +278,7 @@ class CodeGen:
 
         elif action_symb == '#end-call':
             args = []
-            print(f'ss={self.compiler.semantic_stack}')
+            # print(f'ss={self.compiler.semantic_stack}')
             # print(f'args_num={self.args_num}')
             while self.args_num > 0:
                 self.args_num -= 1
@@ -283,7 +287,7 @@ class CodeGen:
             if self.compiler.semantic_stack[-1] == '@':
                 self.compiler.semantic_stack.pop()
 
-            print(f'args={args}')
+            #print(f'args={args}')
             func_addr = int(self.compiler.semantic_stack[-1])
             if self.bad_hash['output'] == func_addr and len(args) == 1:
                 self.compiler.program_block.append('(PRINT, ' + str(args[0]) + ', , )')
@@ -321,8 +325,11 @@ class CodeGen:
             #print(f'\n\nself.call_seq_stack={self.call_seq_stack}\n\n')
             #print(self.func_return_addr[-1])
             #self.func_return_addr[self.call_seq_stack.pop()]
-            self.compiler.program_block.append('(JP, ' + str(self.curr_mem_address - 4) + ', , )')
-            self.curr_pb_address += 1
+            if self.curr_decl_func != 'main':
+                self.compiler.program_block.append('(JP, ' + str(self.curr_mem_address - 4) + ', , )')
+                self.curr_pb_address += 1
+            # self.compiler.program_block.append(self.curr_decl_func)
+            # self.curr_pb_address += 1
 
             # else:
         #     print('error')
