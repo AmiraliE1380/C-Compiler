@@ -33,7 +33,7 @@ class Grammar:
             'Selection-stmt': [['if', '(', 'Expression', '#sel-expr' , ')', 'Statement' , '#sel-endif', 'else', '#sel-beginelse' , 'Statement' , '#sel-endelse']],
             'Iteration-stmt': [['repeat', '#it-start' , 'Statement', 'until', '(', 'Expression', '#it-check'  ,')']],
             'Return-stmt': [['return', 'Return-stmt-prime']], #changed
-            'Return-stmt-prime': [['#return-void', ';'], ['Expression', '#return-non-void', ';']], #changed
+            'Return-stmt-prime': [['#return-void', ';'], ['#return-num', 'Expression', '#return-non-void', ';']], #changed
             'Expression': [['Simple-expression-zegond'], ['#expr-id', '#latest-id', 'id', 'B']],
             'B': [['=','Expression', '#B-assign'], ['[', 'Expression', '#B-expr-ind', ']', 'H'], ['Simple-expression-prime']],
             'H': [['=', 'Expression','#H-assign'], ['G', 'D','C']],
@@ -64,7 +64,7 @@ class Grammar:
             '#decl-id','#decl-var','#decl-arr','#decl-func',
             '#it-start', '#it-check', 
             '#sel-expr', '#sel-endif',  '#sel-beginelse' , '#sel-endelse',
-            '#return-non-void', '#return',  # new
+            '#return-non-void', '#return', '#return-num',  # new
             '#call', '#end-call', '#arg', '#fun-end',  # new
             '#save-return-loc',  # new
             '#latest-id', '#no-param',  # new

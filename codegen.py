@@ -19,8 +19,11 @@ class CodeGen:
         self.func_locations = {}
         self.func_return_addr = {}
         self.curr_decl_func = None
+        self.funcs = []
         self.funcs_with_return = []
         self.call_seq_stack = ['main']
+
+        self.count = 0
 
 
     def get_temp(self):
@@ -51,14 +54,17 @@ class CodeGen:
             return_val_addr = self.func_return_addr[self.current_func] - 4
             t = self.get_temp()
             print(f't={t}')
-            self.compiler.program_block.append('(AASSIGN, ' + str(return_val_addr) + ', ' + str(t) + ', )')
+            self.compiler.program_block.append('(ASSIGN, ' + str(return_val_addr) + ', ' + str(t) + ', )')
             self.curr_pb_address += 1
             print(f'temp={t}')
-            #self.compiler.semantic_stack.append(t)
+            self.compiler.semantic_stack.append(t)
 
 
     def code_gen(self,action_symb):
         lookahead_token = self.compiler.lookahead_token
+
+        print(f'{self.count}.\tss=\t{self.compiler.semantic_stack}\tlookahead={lookahead_token}\tss=\t{self.bad_hash}\n')
+        self.count += 1
 
         if action_symb == '#decl-id':
             self.compiler.symbol_table[self.curr_mem_address] =  {'lexeme' : lookahead_token[1], 'type': lookahead_token[0],
@@ -87,6 +93,7 @@ class CodeGen:
             self.curr_mem_address += 4
             self.func_locations[self.latest_id_decl] = self.curr_pb_address
             self.curr_decl_func = self.latest_id_decl
+            self.funcs.append(self.curr_decl_func)
             if self.curr_decl_func == 'main':
                 jump_main_inst = '(JP, #' + str(self.curr_pb_address) + ', , )'
                 self.compiler.program_block = [jump_main_inst] + self.compiler.program_block
@@ -104,12 +111,13 @@ class CodeGen:
         
         elif action_symb == '#expr-id' or action_symb == '#factor-id':
             addr = self.bad_hash[lookahead_token[1]]
-            self.compiler.semantic_stack.append(str(addr))
+            if not (lookahead_token[1] in self.funcs):
+                print(f'LA={lookahead_token[1]}')
+                self.compiler.semantic_stack.append(str(addr))
         
         elif action_symb == '#B-assign' or action_symb == '#H-assign':
             top = self.compiler.semantic_stack[-1]
             top1 = self.compiler.semantic_stack[-2]
-
             self.compiler.program_block.append('(ASSIGN, ' + str(top) + ', '+ str(top1)+', )')
             print(f'{self.curr_pb_address}.\t{self.compiler.program_block[-1]}')
             print(f'ss={self.compiler.semantic_stack}')
@@ -138,7 +146,9 @@ class CodeGen:
 
 
         elif action_symb == '#D-addop':
-            self.compiler.semantic_stack.append(lookahead_token[1])
+            if not (lookahead_token[1] in self.funcs):
+                print(f'LA={lookahead_token[1]}')
+                self.compiler.semantic_stack.append(lookahead_token[1])
 
         elif action_symb == '#D-add':
             top = self.compiler.semantic_stack[-1]
@@ -190,7 +200,9 @@ class CodeGen:
 
 
         elif action_symb == '#C-relop':
-            self.compiler.semantic_stack.append(lookahead_token[1])
+            if not (lookahead_token[1] in self.funcs):
+                print(f'LA={lookahead_token[1]}')
+                self.compiler.semantic_stack.append(lookahead_token[1])
         
         elif action_symb == '#C-rel':
             top = self.compiler.semantic_stack[-1]
@@ -327,11 +339,20 @@ class CodeGen:
             #self.func_return_addr[self.call_seq_stack.pop()]
             if self.curr_decl_func != 'main':
                 self.compiler.program_block.append('(JP, ' + str(self.curr_mem_address - 4) + ', , )')
+                self.compiler.semantic_stack.append(self.curr_mem_address)
                 self.curr_pb_address += 1
             # self.compiler.program_block.append(self.curr_decl_func)
             # self.curr_pb_address += 1
 
-            # else:
+        elif action_symb == '#return-num':
+            print('hiiiiiiiiiiiiiiii')
+            if lookahead_token[0] == 'NUM':
+                t = self.get_temp()
+                self.compiler.program_block.append('(ASSIGN, #' + str(lookahead_token[1]) + ', ' + str(t) + ', )')
+                self.curr_pb_address += 1
+                self.compiler.semantic_stack.append(t)
+
+        # else:
         #     print('error')
 
         # print("Action " + action_symb + " is taken.")
