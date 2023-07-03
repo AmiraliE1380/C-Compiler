@@ -5,6 +5,7 @@ class CodeGen:
         self.curr_mem_address = 0
         self.curr_pb_address = 1
         self.compiler = compiler
+        self.compiler.program_block = [' ']
         self.bad_hash = {}  # maps id of var or func to mem location
                             # Ex: bad_hash={'output': 0, 'fun': 4, 'zz': 8, 'x': 12, 'main': 20, 'a': 24, 'b': 28, 'c': 32}
 
@@ -63,7 +64,7 @@ class CodeGen:
     def code_gen(self,action_symb):
         lookahead_token = self.compiler.lookahead_token
 
-        print(f'{self.count}.\tss=\t{self.compiler.semantic_stack}\tlookahead={lookahead_token}\tss=\t{self.bad_hash}\n')
+        print(f'{self.count}.\tss=\t{self.compiler.semantic_stack}\tlookahead={lookahead_token}\tbh=\t{self.bad_hash}\n')
         self.count += 1
 
         if action_symb == '#decl-id':
@@ -96,7 +97,11 @@ class CodeGen:
             self.funcs.append(self.curr_decl_func)
             if self.curr_decl_func == 'main':
                 jump_main_inst = '(JP, #' + str(self.curr_pb_address) + ', , )'
-                self.compiler.program_block = [jump_main_inst] + self.compiler.program_block
+                self.compiler.program_block[0] = jump_main_inst
+
+            #initiate self.break_list and self.it_scope_list
+            self.break_list = []  # tuples of (pb address of break, closest iteration scope)
+            self.it_scope_list = []  # elements of label of scope
 
             #print(f'func_locations={self.func_locations}')
 
@@ -112,7 +117,7 @@ class CodeGen:
         elif action_symb == '#expr-id' or action_symb == '#factor-id':
             addr = self.bad_hash[lookahead_token[1]]
             if not (lookahead_token[1] in self.funcs):
-                print(f'LA={lookahead_token[1]}')
+                #print(f'LA={lookahead_token[1]}')
                 self.compiler.semantic_stack.append(str(addr))
         
         elif action_symb == '#B-assign' or action_symb == '#H-assign':
@@ -147,7 +152,7 @@ class CodeGen:
 
         elif action_symb == '#D-addop':
             if not (lookahead_token[1] in self.funcs):
-                print(f'LA={lookahead_token[1]}')
+                #print(f'LA={lookahead_token[1]}')
                 self.compiler.semantic_stack.append(lookahead_token[1])
 
         elif action_symb == '#D-add':
@@ -201,7 +206,7 @@ class CodeGen:
 
         elif action_symb == '#C-relop':
             if not (lookahead_token[1] in self.funcs):
-                print(f'LA={lookahead_token[1]}')
+                #print(f'LA={lookahead_token[1]}')
                 self.compiler.semantic_stack.append(lookahead_token[1])
         
         elif action_symb == '#C-rel':
@@ -211,6 +216,7 @@ class CodeGen:
             t = self.get_temp()
             if op == '<':
                 self.compiler.program_block.append('(LT, ' + str(top1) + ', ' + str(top) + ', '+  str(t) +  ')')
+                print('(LT, ' + str(top1) + ', ' + str(top) + ', '+  str(t) +  ')')
             else:
                 self.compiler.program_block.append('(EQ, ' + str(top) +  ', ' +  str(top1) + ', ' +  str(t) + ')')
             self.curr_pb_address += 1
@@ -238,7 +244,9 @@ class CodeGen:
             self.compiler.semantic_stack.pop()
             while len(self.break_list) > 0 and self.break_list[-1][1] == self.it_scope_list[-1]:
                 self.compiler.program_block[self.break_list[-1][0]] = '(JP, '+str(self.curr_pb_address) + ', , )'
+                print('(JP, ' + str(self.curr_pb_address) + ', , )')
                 self.break_list.pop()
+            print(self.compiler.program_block[-1])
             self.it_scope_list.pop()
 
             
@@ -258,6 +266,7 @@ class CodeGen:
             top1 = self.compiler.semantic_stack[-2] # begin if address
             top2 = self.compiler.semantic_stack[-3] # expression evaluation
             self.compiler.program_block[int(top1)] = ('(JPF, ' + str(top2) + ', ' + str(self.curr_pb_address) + ', )')
+            print('(JPF, ' + str(top) +  ', '+ str(top1) + ', )')
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
             self.compiler.semantic_stack.pop()
@@ -266,6 +275,7 @@ class CodeGen:
         elif action_symb == '#sel-endelse':
             top = self.compiler.semantic_stack[-1]
             self.compiler.program_block[int(top)] = ('(JP, '  + str(self.curr_pb_address) + ', , )')
+            print('(JP, '  + str(self.curr_pb_address) + ', , )')
             self.compiler.semantic_stack.pop()
 
 
@@ -324,8 +334,6 @@ class CodeGen:
             self.get_temp()
 
 
-        # elif action_symb == '#return-void':
-        #     pass
 
 
         elif action_symb == '#return-non-void':
@@ -337,15 +345,18 @@ class CodeGen:
             #print(f'\n\nself.call_seq_stack={self.call_seq_stack}\n\n')
             #print(self.func_return_addr[-1])
             #self.func_return_addr[self.call_seq_stack.pop()]
+
             if self.curr_decl_func != 'main':
                 self.compiler.program_block.append('(JP, ' + str(self.curr_mem_address - 4) + ', , )')
+                print('(JP, ' + str(self.curr_pb_address) + ', , )')
                 self.compiler.semantic_stack.append(self.curr_mem_address)
                 self.curr_pb_address += 1
+
             # self.compiler.program_block.append(self.curr_decl_func)
             # self.curr_pb_address += 1
 
         elif action_symb == '#return-num':
-            print('hiiiiiiiiiiiiiiii')
+            # print('hiiiiiiiiiiiiiiii')
             if lookahead_token[0] == 'NUM':
                 t = self.get_temp()
                 self.compiler.program_block.append('(ASSIGN, #' + str(lookahead_token[1]) + ', ' + str(t) + ', )')

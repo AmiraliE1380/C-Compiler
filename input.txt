@@ -1,22 +1,24 @@
-/*  ==  Sample 5 === */
-void func(int arg) {
-	if (arg < 0) {
-		output(2);
-		return;
+/*  ==  Sample 5 ===
+int a;
+
+void func(void) {
+    if(0<1) {
+        output(1);
+    } else {
+        output(0);
+    }
+}
+int x[10];
+*/
+void fun(void) {
+    if (1 < 2) {
+	    output(85);
 	} else {
-		output(20);
-	} 
-	output(200);
+	    output(35);
+	}
 }
 
 void main(void) {
-	int var;
-	var = 10;
-	if (0 < var) {
-		output(1);
-		func(3 - var + 0 - 3);
-	} else {
-		output(10);
-	} 
-	output(100);
+
+    fun();
 }
