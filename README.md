@@ -1,3 +1,2 @@
 # C-Compiler
-Quantum
-Philosophy
+A compiler for simplified C in Python.
